@@ -1,0 +1,12 @@
+{
+  "name": "node_adt",
+  "description": "Read Advantage Database Server ADT (Advantage Database Table) files.",
+  "version": "0.0.1",
+  "main": "node_adt.js",
+  "scripts": {
+    "test": "node ./node_modules/mocha/bin/mocha test/test.js"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.2"
+  }
+}
