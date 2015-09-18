@@ -56,6 +56,21 @@ describe('Adt', function() {
       assert.equal(columns[9].name, 'InfBackCol');
       assert.equal(columns[10].name, 'CodeInfo');
     });
+
+    it('should get the types for all columns', function() {
+      assert.equal(columns[0].type, 15);
+      assert.equal(columns[1].type, 11);
+      assert.equal(columns[2].type, 4);
+      assert.equal(columns[3].type, 4);
+      assert.equal(columns[4].type, 4);
+      assert.equal(columns[5].type, 4);
+      assert.equal(columns[6].type, 11);
+      assert.equal(columns[7].type, 11);
+      assert.equal(columns[8].type, 11);
+      assert.equal(columns[9].type, 11);
+      assert.equal(columns[10].type, 4);
+    });
+
   });
 
 });

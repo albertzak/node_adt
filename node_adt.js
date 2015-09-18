@@ -9,7 +9,7 @@ var Adt = function() {
     this.data = fs.readFileSync(path);
     this.header = this.parseHeader();
     this.columns = this.parseColumns();
-    
+
     return this;
   }
 
@@ -30,10 +30,16 @@ var Adt = function() {
     var columns = [];
 
     for(var i=0; i < this.header.columnCount; i++) {
+      // skip past header to get to column information
       var column = this.data.slice(HEADER_LENGTH + COLUMN_LENGTH * i);
 
+      // column names are the first 128 bytes and column info takes up the last 72 bytes.
       var name = column.toString('ascii', 0, 128).trim().replace(/\0/g, '');
-      columns.push({name: name});
+
+      // byte 130 contains a 16-bit column type
+      var type = column.readUInt16LE(129);
+
+      columns.push({name: name, type: type});
     }
 
     return columns;
