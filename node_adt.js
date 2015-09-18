@@ -40,9 +40,13 @@ var Adt = function() {
       var type = column.readUInt16LE(129);
       var length = column.readUInt16LE(135);
 
-      columns.push({name: name, type: type, length: length});
+      if (length > 0) {
+        columns.push({name: name, type: type, length: length});
+      }
     }
 
+    // Reset the column count in case any were skipped
+    this.header.columnCount = columns.length;
     return columns;
   }
 
