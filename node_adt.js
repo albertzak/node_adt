@@ -34,12 +34,13 @@ var Adt = function() {
       var column = this.data.slice(HEADER_LENGTH + COLUMN_LENGTH * i);
 
       // column names are the first 128 bytes and column info takes up the last 72 bytes.
-      var name = column.toString('ascii', 0, 128).trim().replace(/\0/g, '');
-
       // byte 130 contains a 16-bit column type
+      // byte 136 contains a 16-bit length field
+      var name = column.toString('ascii', 0, 128).trim().replace(/\0/g, '');
       var type = column.readUInt16LE(129);
+      var length = column.readUInt16LE(135);
 
-      columns.push({name: name, type: type});
+      columns.push({name: name, type: type, length: length});
     }
 
     return columns;

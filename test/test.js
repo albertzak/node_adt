@@ -71,6 +71,20 @@ describe('Adt', function() {
       assert.equal(columns[10].type, 4);
     });
 
+    it('should get the lengths for all columns', function() {
+      assert.equal(columns[0].length, 4);
+      assert.equal(columns[1].length, 4);
+      assert.equal(columns[2].length, 10);
+      assert.equal(columns[3].length, 6);
+      assert.equal(columns[4].length, 120);
+      assert.equal(columns[5].length, 80);
+      assert.equal(columns[6].length, 4);
+      assert.equal(columns[7].length, 4);
+      assert.equal(columns[8].length, 4);
+      assert.equal(columns[9].length, 4);
+      assert.equal(columns[10].length, 120);
+    });
+
   });
 
 });
