@@ -7,12 +7,14 @@ var Adt = function() {
     return this.parseHeader();
   }
 
+  // Determine record count, column count, record length, and data offset
   this.parseHeader = function() {
     var header = {};
 
-    header.recordCount  = this.data.readUIntLE(24);
-    header.columnCount  = this.data.readUIntLE(33);
-    header.recordLength = this.data.readUIntLE(36);
+    header.recordCount  = this.data.readUIntLE(24, 4);
+    header.dataOffset   = this.data.readUIntLE(32, 4);
+    header.recordLength = this.data.readUIntLE(36, 4);
+    header.columnCount  = (header.dataOffset-400)/200;
 
     return header;
   }
