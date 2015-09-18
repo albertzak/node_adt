@@ -1,6 +1,17 @@
 {
   "name": "node_adt",
   "description": "Read Advantage Database Server ADT (Advantage Database Table) files.",
+  "author": "Albert Zak <me@albertzak.com> (https://albertzak.com/)",
+  "contributors": [
+    "Chase Gray <mailto:chase@ratchetsoftware.com>"
+  ],
+  "license": "MIT",
+  "keywords": ["adt", "advantage database", "ads", "adi", "sybase", "paradox"],
+  "homepage": "https://github.com/albertzak/node_adt",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/albertzak/node_adt.git"
+  },
   "version": "0.0.1",
   "main": "node_adt.js",
   "scripts": {

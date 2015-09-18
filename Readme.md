@@ -1,6 +1,6 @@
 # Node-ADT
 
-Node ADT is a small fast library for reading Advantage Database Server database files (.ADT), ported to node from the awesome Rubygem by Chase Gray.
+Node ADT is a small fast library for reading Advantage Database Server database files (.ADT). It is a quick node port from the awesome rubygem by Chase Gray.
 
 * Original Project page: <http://github.com/chasemgray/Ruby-ADT>
 
@@ -28,12 +28,15 @@ Load a single record using <tt>records</tt>
 
 ## Limitations and known bugs
 
+* The rubygem has many more features than this node package, such as CSV export and an ActiveRecord-like find method.
+* Cannot read `Date`, `Time`, or `Datetime` columns
 * ADT is read-only
 * External index files are not used
+* Tests are written against a database file which unfortunately I can't share.
 
 ## Acknowledgements
 
-Thank you, Chase Gray, for all the hard work of reverse-engineering the ADT format.
+Thank you, Chase Gray, for all the hard work of figuring out how the ADT format works.
 
 
 ## License
