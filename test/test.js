@@ -84,6 +84,22 @@ describe('Adt', function() {
       assert.equal(columns[9].length, 4);
       assert.equal(columns[10].length, 120);
     });
+  });
+
+  describe('#parseRecords', function() {
+    var records = {};
+
+    beforeEach(function() {
+      records = Adt.open('./test/fixtures/ARZTSTAT474.adt').records;
+    });
+
+    it('should get all records', function () {
+      assert.equal(records.length, 139);
+    });
+
+    it('should encode fields to utf-8', function () {
+      assert.equal(records[4].Text, 'Übersicht Leistungen:');
+    });
 
   });
 

@@ -6,6 +6,9 @@
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha test/test.js"
   },
+  "dependencies": {
+    "iconv-lite": "0.4.11"
+  },
   "devDependencies": {
     "mocha": "^2.3.2"
   }
