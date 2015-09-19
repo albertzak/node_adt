@@ -32,7 +32,6 @@ Load a single record using <tt>records</tt>
 * Cannot read `Date`, `Time`, or `Datetime` columns
 * ADT is read-only
 * External index files are not used
-* Tests are written against a database file which unfortunately I can't share.
 
 ## Acknowledgements
 
