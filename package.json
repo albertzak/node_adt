@@ -6,18 +6,26 @@
     "Chase Gray <mailto:chase@ratchetsoftware.com>"
   ],
   "license": "MIT",
-  "keywords": ["adt", "advantage database", "ads", "adi", "sybase", "paradox"],
+  "keywords": [
+    "adt",
+    "advantage database",
+    "ads",
+    "adi",
+    "sybase",
+    "paradox"
+  ],
   "homepage": "https://github.com/albertzak/node_adt",
   "repository": {
     "type": "git",
     "url": "git://github.com/albertzak/node_adt.git"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "node_adt.js",
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha test/test.js"
   },
   "dependencies": {
+    "fs-access": "^1.0.0",
     "iconv-lite": "0.4.11"
   },
   "devDependencies": {

@@ -1,6 +1,7 @@
 'use strict';
 
 var fs = require('fs');
+var fsAccess = require('fs-access');
 var iconv = require('iconv-lite');
 
 var Adt = function() {
@@ -28,7 +29,7 @@ var Adt = function() {
 
     _this.path = path;
 
-    fs.access(path, fs.F_OK | fs.R_OK, function(err) {
+    fsAccess(path, function(err) {
       if (err) return callback(err, _this);
 
       _this.parseHeader(function(err, _this) {
