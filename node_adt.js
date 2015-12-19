@@ -56,9 +56,9 @@ var Adt = function() {
         var header = {};
 
         try {
-          header.recordCount  = buffer.readUIntLE(24, 4);
-          header.dataOffset   = buffer.readUIntLE(32, 4);
-          header.recordLength = buffer.readUIntLE(36, 4);
+          header.recordCount  = buffer.readUInt16LE(24, 4);
+          header.dataOffset   = buffer.readUInt16LE(32, 4);
+          header.recordLength = buffer.readUInt16LE(36, 4);
           header.columnCount  = (header.dataOffset-400)/200;
           _this.header = header;
         } catch(e) {
@@ -115,6 +115,8 @@ var Adt = function() {
     fs.open(this.path, 'r', function(err, fd) {
       if (err) return callback(err, _this);
 
+      var iteratedCount = 0;
+
       for(var i=0; i < _this.header.recordCount; i++) {
         var start  = _this.header.dataOffset + _this.header.recordLength * i;
         var end    = start + _this.header.recordLength;
@@ -133,9 +135,11 @@ var Adt = function() {
           }
 
           iterator(null, record);
+          iteratedCount++;
+          if ((iteratedCount === _this.header.recordCount - 1) && (typeof callback === 'function'))
+            callback(null, _this);
         });
       }
-      if (typeof callback === 'function') callback();
     });
   }
 
@@ -175,7 +179,7 @@ var Adt = function() {
 
       case this.INTEGER:
       case this.AUTOINCREMENT:
-        value = buffer.readUIntLE(0);
+        value = buffer.readUInt16LE(0);
         break;
 
       case this.SHORT:
