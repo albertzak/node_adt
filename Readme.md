@@ -1,5 +1,7 @@
 # Node-ADT
 
+**New in v0.1.0: Read huge database files thanks to async callbacks.**
+
 Node ADT is a small fast library for reading Advantage Database Server database files (.ADT). It is a quick node port from the awesome rubygem by Chase Gray.
 
 * Original Project page: <http://github.com/chasemgray/Ruby-ADT>
@@ -10,26 +12,40 @@ Node ADT is a small fast library for reading Advantage Database Server database 
 
 ## Basic Usage
 
-Load an ADT file:
-
+```JavaScript
     var Adt = require('node_adt');
-    var table = Adt.open('test.adt');
+    var adt = new Adt();
 
-Enumerate all records
+    adt.open('table.adt', 'ISO-8859-1', function(err, table) {
 
-    table.records.forEach(function(record) {
-      console.log(record.name);
-      console.log(record.email);
+      console.log(table.header.recordCount);
+      console.log(table.columns);
+
+      table.forEach(function(err, record) {
+        console.log(record.Name);
+        console.log(record.Email);
+      });
     });
+```
 
-Load a single record using <tt>records</tt>
+## Supported ADT field types
 
-    table.records[6]
+ADT Field     | JavaScript
+------------- | -----------
+`Character`   | `String`
+`CiCharater`  | `String`
+`Logical`     | `Boolean`
+`Double`      | `Number`
+`Integer`     | `Number`
+`ShortInteger`| `Number`
+
+### Not implemented
+
+`Date`, `Memo`, `Numeric`, `Image`, `Binary`, `Time`, `TimeStamp`, `Raw`, `Double`, `Money`, `ModTime`, `RowVersion`
 
 ## Limitations and known bugs
 
 * The rubygem has many more features than this node package, such as CSV export and an ActiveRecord-like find method.
-* Cannot read `Date`, `Time`, or `Datetime` columns
 * ADT is read-only
 * External index files are not used
 

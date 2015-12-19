@@ -1,115 +1,203 @@
 var Adt = require('../node_adt.js');
 var assert = require('assert');
-var fixture = './test/fixtures/a.adt';
+var fixture = './test/fixtures/AbrGru.ADT';
 
 describe('Adt', function() {
   describe('.open', function () {
-    it('should not throw when path exists', function () {
-      assert.doesNotThrow(function() { Adt.open(fixture)});
+    var adt = null;
+
+    beforeEach(function() {
+      adt = new Adt();
+    })
+
+    it('should not throw exceptions', function(done) {
+      assert.doesNotThrow(function() {
+        adt.open(fixture, 'ISO-8859-1', function(err, obj) {
+          assert(err === null);
+          done();
+          return;
+        });
+      });
     });
 
-    it('should throw when path does not exist', function () {
-      assert.throws(function() { Adt.open('./test/invalid')});
+    it('should check for file permissions', function(done) {
+      adt.open('non-existant-path', 'ISO-8859-1', function(err, cb) {
+        assert(err.code === 'ENOENT');
+        done();
+        return;
+      });
+    });
+  });
+
+  describe('define type constants', function() {
+    it('for string fields', function() {
+      assert.equal(new Adt().CHARACTER, 4);
+      assert.equal(new Adt().CICHARACTER, 20);
+    });
+
+    it('for double fields', function() {
+      assert.equal(new Adt().DOUBLE, 10);
+    });
+
+    it('for integer fields', function() {
+      assert.equal(new Adt().INTEGER, 11);
+      assert.equal(new Adt().AUTOINCREMENT, 15);
+    });
+
+    it('for short fields', function() {
+      assert.equal(new Adt().SHORT, 12);
+    });
+
+    it('for boolean fields', function() {
+      assert.equal(new Adt().LOGICAL, 1);
+    });
+
+    it('for date fields', function() {
+      assert.equal(new Adt().DATE, 3);
+      assert.equal(new Adt().TIME, 13);
+      assert.equal(new Adt().TIMESTAMP, 14);
     });
   });
 
   describe('#parseHeader', function() {
-    var header = {};
+    var adt = null;
+    var header = null;
 
-    beforeEach(function() {
-      header = Adt.open(fixture).header;
+    beforeEach(function(done) {
+      adt = new Adt();
+      adt.open(fixture, 'ISO-8859-1', function(err, obj) {
+        assert(err === null);
+        header = obj.header;
+        done();
+      });
     });
 
-    it('should get the record count', function () {
-      assert.equal(header.recordCount, 1);
+    it('should get the record count', function() {
+      assert.equal(header.recordCount, 9);
     });
 
-    it('should get the column count', function () {
-      assert.equal(header.columnCount, 32);
+    it('should get the column count', function() {
+      assert.equal(header.columnCount, 20);
     });
 
-    it('should get the record length', function () {
-      assert.equal(header.recordLength, 523);
+    it('should get the record length', function() {
+      assert.equal(header.recordLength, 106);
     });
 
-    it('should get the data offset', function () {
-      assert.equal(header.dataOffset, 6800);
+    it('should get the data offset', function() {
+      assert.equal(header.dataOffset, 4400);
     });
   });
 
   describe('#parseColumns', function() {
-    var columns = {};
+    var adt = null;
+    var columns = null;
 
-    beforeEach(function() {
-      columns = Adt.open(fixture).columns;
+    beforeEach(function(done) {
+      adt = new Adt();
+      adt.open(fixture, 'ISO-8859-1', function(err, obj) {
+        assert(err === null);
+        columns = obj.columns;
+        done();
+      });
     });
 
     it('should get the names for all columns', function () {
-      assert.equal(columns[0].name, 'ProviderNo');
-      assert.equal(columns[1].name, 'Name');
-      assert.equal(columns[2].name, 'Address1');
-      assert.equal(columns[3].name, 'Address2');
-      assert.equal(columns[4].name, 'Address3');
-      assert.equal(columns[5].name, 'City');
-      assert.equal(columns[6].name, 'County');
-      assert.equal(columns[7].name, 'State');
-      assert.equal(columns[8].name, 'Zip');
-      assert.equal(columns[9].name, 'Phone');
-      assert.equal(columns[10].name, 'PhoneExt');
+      assert.equal(columns[0].name, 'AbrGruId');
+      assert.equal(columns[1].name, 'Such');
+      assert.equal(columns[2].name, 'Bez');
+      assert.equal(columns[3].name, 'AbrKennz');
+      assert.equal(columns[4].name, 'AbrEmpfId');
+      assert.equal(columns[5].name, 'VerrKennz');
+
+      assert.equal(columns[16].name, 'MwstAusgl');
+
+      assert.equal(columns[18].name, 'Wahlarzt');
+      assert.equal(columns[19].name, 'MwstGrup');
     });
 
     it('should get the types for all columns', function() {
-      assert.equal(columns[0].type, 4);
-      assert.equal(columns[1].type, 4);
-      assert.equal(columns[2].type, 4);
-      assert.equal(columns[3].type, 4);
-      assert.equal(columns[4].type, 4);
-      assert.equal(columns[5].type, 4);
-      assert.equal(columns[6].type, 4);
-      assert.equal(columns[7].type, 4);
-      assert.equal(columns[8].type, 4);
-      assert.equal(columns[9].type, 4);
-      assert.equal(columns[10].type, 4);
+      assert.equal(columns[0].type, adt.INTEGER);
+      assert.equal(columns[1].type, adt.CHARACTER);
+      assert.equal(columns[2].type, adt.CHARACTER);
+      assert.equal(columns[3].type, adt.SHORT);
+      assert.equal(columns[4].type, adt.INTEGER);
+      assert.equal(columns[5].type, adt.SHORT);
+      assert.equal(columns[6].type, adt.SHORT);
+      assert.equal(columns[7].type, adt.SHORT);
+      assert.equal(columns[8].type, adt.LOGICAL);
+      assert.equal(columns[9].type, adt.LOGICAL);
+      assert.equal(columns[10].type, adt.LOGICAL);
+      assert.equal(columns[11].type, adt.CHARACTER);
+      assert.equal(columns[12].type, adt.CHARACTER);
+      assert.equal(columns[13].type, adt.SHORT);
+      assert.equal(columns[14].type, adt.LOGICAL);
+      assert.equal(columns[15].type, adt.CHARACTER);
+      assert.equal(columns[16].type, adt.DOUBLE);
+      assert.equal(columns[17].type, adt.CHARACTER);
+      assert.equal(columns[18].type, adt.LOGICAL);
+      assert.equal(columns[19].type, adt.INTEGER);
     });
 
     it('should get the lengths for all columns', function() {
-      assert.equal(columns[0].length, 15);
-      assert.equal(columns[1].length, 50);
-      assert.equal(columns[2].length, 40);
-      assert.equal(columns[3].length, 40);
-      assert.equal(columns[4].length, 40);
-      assert.equal(columns[5].length, 18);
-      assert.equal(columns[6].length, 18);
+      assert.equal(columns[0].length, 4);
+      assert.equal(columns[1].length, 6);
+      assert.equal(columns[2].length, 30);
+      assert.equal(columns[3].length, 2);
+      assert.equal(columns[4].length, 4);
+      assert.equal(columns[5].length, 2);
+      assert.equal(columns[6].length, 2);
       assert.equal(columns[7].length, 2);
-      assert.equal(columns[8].length, 10);
-      assert.equal(columns[9].length, 15);
-      assert.equal(columns[10].length, 5);
+      assert.equal(columns[8].length, 1);
+      assert.equal(columns[9].length, 1);
+      assert.equal(columns[10].length, 1);
+      assert.equal(columns[11].length, 6);
+      assert.equal(columns[12].length, 6);
+      assert.equal(columns[13].length, 2);
+      assert.equal(columns[14].length, 1);
+      assert.equal(columns[15].length, 10);
+      assert.equal(columns[16].length, 8);
+      assert.equal(columns[17].length, 8);
+      assert.equal(columns[18].length, 1);
+      assert.equal(columns[19].length, 4);
     });
   });
 
-  describe('#parseRecords', function() {
-    var records = {};
+  describe('#forEach', function() {
+    records = [];
 
-    beforeEach(function() {
-      records = Adt.open(fixture).records;
-    });
-
-    it('should get all records', function () {
-      assert.equal(records.length, 1);
+    before(function(done) {
+      new Adt().open(fixture, 'ISO-8859-1', function(err, adt) {
+        assert(err === null);
+        adt.forEach(function(err, record) {
+          records.push(record);
+        }, function() {
+          done();
+        });
+      });
     });
 
     it('should retrieve field values', function () {
-      assert.equal(records[0].ProviderNo, '43-SAMPLE');
-      assert.equal(records[0].Name, 'Testing Using 01 Sample Provider For Demonstration');
-      assert.equal(records[0].Address1, 'This Is Address Field Number 00000000001');
-      assert.equal(records[0].Address2, 'This Is Address Field Number 00000000002');
-      assert.equal(records[0].Address3, 'This Is Address Field Number 00000000003');
-      assert.equal(records[0].City, 'Name of City Here');
-      assert.equal(records[0].County, 'Name of Cnty Here');
-      assert.equal(records[0].State, 'AL');
-      assert.equal(records[0].Zip, '55555-4444');
-      assert.equal(records[0].Phone, '(318) 688-1949');
-      assert.equal(records[0].PhoneExt, '12345');
+      assert.equal(records[0].AbrGruId, 1);
+      assert.equal(records[0].Such, 'WGK');
+      assert.equal(records[0].Bez, 'WGK');
+      assert.equal(records[0].AbrKennz, 0);
+      assert.equal(records[0].AbrEmpfId, 0);
+      assert.equal(records[0].VerrKennz, 1);
+      assert.equal(records[0].ZrAbr, 0);
+      assert.equal(records[0].PsAbr, 0);
+      assert.equal(records[0].OpKennz, false);
+      assert.equal(records[0].OplKennz, false);
+      assert.equal(records[0].HonKennz, false);
+      assert.equal(records[0].ErstHonLst, '');
+      assert.equal(records[0].FolgHonLst, '');
+      assert.equal(records[0].KassenArt, 2);
+      assert.equal(records[0].MtglNrKennz, false);
+      assert.equal(records[0].FAnzeige, '');
+      assert.equal(records[0].MwstAusgl, 0);
+      assert.equal(records[0].DateHidden, '00000000');
+      assert.equal(records[0].Wahlarzt, false);
+      assert.equal(records[0].MwstGrup, '');
     });
 
   });

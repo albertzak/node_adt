@@ -1,125 +1,179 @@
+'use strict';
+
 var fs = require('fs');
 var iconv = require('iconv-lite');
 
 var Adt = function() {
 
-  var HEADER_LENGTH = 400,
-      COLUMN_LENGTH = 200;
+  this.HEADER_LENGTH  = 400;
+  this.COLUMN_LENGTH  = 200;
 
-  this.open = function(path, encoding) {
-    if (typeof encoding === 'undefined')
-      this.encoding = 'ISO-8859-1';
+  this.LOGICAL        = 1;
+  this.CHARACTER      = 4;
+  this.CICHARACTER    = 20;
+  this.DOUBLE         = 10;
+  this.INTEGER        = 11;
+  this.AUTOINCREMENT  = 15;
+  this.SHORT          = 12;
+  this.DATE           = 3;
+  this.TIME           = 13;
+  this.TIMESTAMP      = 14;
+
+  this.open = function(path, encoding, callback) {
+    var _this = this;
+    if (typeof encoding === 'undefined' || encoding === null)
+      _this.encoding = 'ISO-8859-1';
     else
-      this.encoding = encoding;
+      _this.encoding = encoding;
 
-    this.data = fs.readFileSync(path);
-    this.header = this.parseHeader();
-    this.columns = this.parseColumns();
-    this.records = this.parseRecords();
+    _this.path = path;
 
-    return this;
+    fs.access(path, fs.F_OK | fs.R_OK, function(err) {
+      if (err) return callback(err, _this);
+
+      _this.parseHeader(function(err, _this) {
+        if (err) return callback(err, _this);
+
+        _this.parseColumns(function(err, _this) {
+          if (err) return callback(err, _this);
+          callback(null, _this);
+        });
+      });
+    });
   }
 
   // Determine record count, column count, record length, and data offset
-  this.parseHeader = function() {
-    var header = {};
+  this.parseHeader = function(callback) {
+    var _this = this;
 
-    header.recordCount  = this.data.readUIntLE(24, 4);
-    header.dataOffset   = this.data.readUIntLE(32, 4);
-    header.recordLength = this.data.readUIntLE(36, 4);
-    header.columnCount  = (header.dataOffset-400)/200;
+    fs.open(_this.path, 'r', function(err, fd) {
+      if (err)
+        return callback(err, _this);
 
-    return header;
+      fs.read(fd, new Buffer(_this.HEADER_LENGTH), 0, _this.HEADER_LENGTH, 0, function(err, bytes, buffer) {
+        var header = {};
+        header.recordCount  = buffer.readUIntLE(24, 4);
+        header.dataOffset   = buffer.readUIntLE(32, 4);
+        header.recordLength = buffer.readUIntLE(36, 4);
+        header.columnCount  = (header.dataOffset-400)/200;
+        _this.header = header;
+
+        callback(err, _this);
+      });
+    });
   }
 
   // Retrieves column information from the database
-  this.parseColumns = function() {
-    var columns = [];
+  this.parseColumns = function(callback) {
+    var _this = this;
 
-    for(var i=0; i < this.header.columnCount; i++) {
-      // skip past header to get to column information
-      var column = this.data.slice(HEADER_LENGTH + COLUMN_LENGTH * i);
+    fs.open(_this.path, 'r', function(err, fd) {
+      if (err)
+        return callback(err, _this);
 
-      // column names are the first 128 bytes and column info takes up the last 72 bytes.
-      // byte 130 contains a 16-bit column type
-      // byte 136 contains a 16-bit length field
-      var name = iconv.decode(column.slice(0, 128), this.encoding).replace(/\0/g, '').trim();
-      var type = column.readUInt16LE(129);
-      var length = column.readUInt16LE(135);
+      // column information is located after the header
+      // 200 bytes of information for each column
+      var columnsLength = _this.COLUMN_LENGTH * _this.header.columnCount;
+      var tempBuffer = new Buffer(_this.HEADER_LENGTH + columnsLength);
+      fs.read(fd, tempBuffer, 0, columnsLength, _this.HEADER_LENGTH, function(err, bytes, buffer) {
+        if (err)
+          return callback(err, _this);
 
-      if (length > 0) {
-        columns.push({name: name, type: type, length: length});
-      }
-    }
+        _this.columns = [];
 
-    // Reset the column count in case any were skipped
-    this.header.columnCount = columns.length;
-    return columns;
+        for (var i=0; i < _this.header.columnCount; i++) {
+          var column = buffer.slice(_this.COLUMN_LENGTH * i);
+
+          // column names are the first 128 bytes and column info takes up the last 72 bytes.
+          // byte 130 contains a 16-bit column type
+          // byte 136 contains a 16-bit length field
+          var name = iconv.decode(column.slice(0, 128), _this.encoding).replace(/\0/g, '').trim();
+          var type = column.readUInt16LE(129);
+          var length = column.readUInt16LE(135);
+
+          _this.columns.push({name: name, type: type, length: length});
+        }
+
+        callback(err, _this);
+      });
+    });
+
   }
 
-  this.parseRecords = function() {
-    var records = [];
+  this.forEach = function(iterator, callback) {
+    var _this = this;
 
-    for(var i=0; i < this.header.recordCount; i++) {
-      var start  = this.header.dataOffset + this.header.recordLength * i;
-      var end    = start + this.header.recordLength;
-      var record = this.data.slice(start, end);
-      record = this.parseRecord(record, this.encoding);
-      records.push(record);
-    }
+    fs.open(this.path, 'r', function(err, fd) {
+      if (err)
+        return callback(err, _this);
 
-    return records;
+      for(var i=0; i < _this.header.recordCount; i++) {
+        var start  = _this.header.dataOffset + _this.header.recordLength * i;
+        var end    = start + _this.header.recordLength;
+        var length = end - start;
+        var tempBuffer = new Buffer(length);
+
+        fs.read(fd, tempBuffer, 0, length, start, function(err, bytes, buffer) {
+          var record = _this.parseRecord(buffer, _this.encoding);
+          iterator(null, record);
+        });
+      }
+      callback();
+    });
   }
 
   this.parseRecord = function(buffer, encoding) {
+    var _this = this;
     // skip the first 5 bytes, don't know what they are for and they don't contain the data.
     buffer = buffer.slice(5);
 
     var record = {};
     var offset = 0;
 
-    for(var i=0; i<this.header.columnCount; i++) {
+    for(var i=0; i < _this.header.columnCount; i++) {
       var start = offset;
-      var end = offset + this.columns[i].length;
+      var end = offset + _this.columns[i].length;
       var field = buffer.slice(start, end);
-      record[this.columns[i].name] = this.parseField(field, this.columns[i].type, this.columns[i].length, encoding);
-      offset += this.columns[i].length;
+      record[_this.columns[i].name] = _this.parseField(field, _this.columns[i].type, _this.columns[i].length, encoding);
+      offset += _this.columns[i].length;
     }
 
     return record;
   }
 
+  // Reference:
+  // http://devzone.advantagedatabase.com/dz/webhelp/advantage8.1/server1/adt_field_types_and_specifications.htm
   this.parseField = function(buffer, type, length, encoding) {
     var value;
 
     switch(type) {
-      // character, cicharacter
-      case 4:
-      case 20:
+      case this.CHARACTER:
+      case this.CICHARACTER:
         value = iconv.decode(buffer, encoding).replace(/\0/g, '').trim();
         break;
 
-      // double
-      case 10:
+      case this.DOUBLE:
         value = buffer.readDoubleLE(0);
         break;
 
-      // integer, autoinc
-      case 11:
-      case 15:
+      case this.INTEGER:
+      case this.AUTOINCREMENT:
         value = buffer.readUIntLE(0);
         break;
 
-      // short
-      case 12:
+      case this.SHORT:
         value = buffer.readUInt16LE(0);
         break;
 
-      // date, time, timestamp
+      case this.LOGICAL:
+        var b = iconv.decode(buffer, encoding).replace(/\0/g, '').trim();
+        value = (b === 'T' || b === 't' || b === '1' || b === 'Y' || b === 'y')
+        break;
+
       // not implemented
-      case 3:
-      case 13:
-      case 14:
+      case this.DATE:
+      case this.TIME:
+      case this.TIMESTAMP:
         value = buffer;
         break;
 
@@ -130,6 +184,8 @@ var Adt = function() {
     return value;
   }
 
+  return this;
+
 };
 
-module.exports = new Adt();
+module.exports = Adt;
