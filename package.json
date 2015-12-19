@@ -19,7 +19,7 @@
     "type": "git",
     "url": "git://github.com/albertzak/node_adt.git"
   },
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "node_adt.js",
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha test/test.js"
