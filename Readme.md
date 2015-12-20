@@ -1,6 +1,6 @@
 # Node-ADT
 
-**New in v0.1.0: Read huge database files thanks to async callbacks.**
+**New in v0.1.x: Read huge database files thanks to async callbacks.**
 
 Node ADT is a small fast library for reading Advantage Database Server database files (.ADT). It is a quick node port from the awesome rubygem by Chase Gray.
 

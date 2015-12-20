@@ -56,9 +56,9 @@ var Adt = function() {
         var header = {};
 
         try {
-          header.recordCount  = buffer.readUInt16LE(24, 4);
-          header.dataOffset   = buffer.readUInt16LE(32, 4);
-          header.recordLength = buffer.readUInt16LE(36, 4);
+          header.recordCount  = buffer.readUInt32LE(24, 4);
+          header.dataOffset   = buffer.readUInt32LE(32, 4);
+          header.recordLength = buffer.readUInt32LE(36, 4);
           header.columnCount  = (header.dataOffset-400)/200;
           _this.header = header;
         } catch(e) {
@@ -177,18 +177,22 @@ var Adt = function() {
         value = buffer.readDoubleLE(0);
         break;
 
-      case this.INTEGER:
       case this.AUTOINCREMENT:
-        value = buffer.readUInt16LE(0);
+        value = buffer.readUInt32LE(0);
+        break;
+
+      case this.INTEGER:
+        value = buffer.readInt32LE(0);
+        if (value === -2147483648) value = null;
         break;
 
       case this.SHORT:
-        value = buffer.readUInt16LE(0);
+        value = buffer.readInt16LE(0);
         break;
 
       case this.LOGICAL:
-        var b = iconv.decode(buffer, encoding).replace(/\0/g, '').trim();
-        value = (b === 'T' || b === 't' || b === '1' || b === 'Y' || b === 'y')
+        var b = iconv.decode(buffer, encoding);
+        value = (b === 'T' || b === 't' || b === '1' || b === 'Y' || b === 'y' || b === ' ')
         break;
 
       // not implemented

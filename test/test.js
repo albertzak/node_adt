@@ -197,7 +197,26 @@ describe('Adt', function() {
       assert.equal(records[0].MwstAusgl, 0);
       assert.equal(records[0].DateHidden, '00000000');
       assert.equal(records[0].Wahlarzt, false);
-      assert.equal(records[0].MwstGrup, '');
+      assert.equal(records[0].MwstGrup, null);
+    });
+
+    it('should parse boolean values', function() {
+      assert.equal(records[2].MtglNrKennz, true);
+      assert.equal(records[0].Wahlarzt, false);
+      assert.equal(records[1].Wahlarzt, false);
+      assert.equal(records[2].Wahlarzt, false);
+      assert.equal(records[3].Wahlarzt, false);
+      assert.equal(records[4].Wahlarzt, false);
+      assert.equal(records[5].Wahlarzt, true);
+      assert.equal(records[6].Wahlarzt, false);
+      assert.equal(records[7].Wahlarzt, false);
+      assert.equal(records[8].Wahlarzt, false);
+    });
+
+
+    it('should handle long signed integers that can be null', function() {
+      assert.equal(records[7].MwstGrup, null);
+      assert.equal(records[8].MwstGrup, 0);
     });
 
   });
