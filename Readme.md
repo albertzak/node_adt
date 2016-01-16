@@ -21,12 +21,14 @@ Node ADT is a small fast library for reading Advantage Database Server database 
       console.log(table.header.recordCount);
       console.log(table.columns);
 
-      table.forEach(function(err, record) {
+      table.eachRecord(function(err, record) {
         console.log(record.Name);
         console.log(record.Email);
       });
     });
 ```
+
+**Changes in v1.0: Please note: `forEach` has been renamed to `eachRecord`**
 
 ## Supported ADT field types
 

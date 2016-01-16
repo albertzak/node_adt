@@ -163,13 +163,13 @@ describe('Adt', function() {
     });
   });
 
-  describe('#forEach', function() {
+  describe('#eachRecord', function() {
     records = [];
 
     before(function(done) {
       new Adt().open(fixture, 'ISO-8859-1', function(err, adt) {
         assert(err === null);
-        adt.forEach(function(err, record) {
+        adt.eachRecord(function(err, record) {
           records.push(record);
         }, function() {
           done();

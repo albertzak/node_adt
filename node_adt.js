@@ -109,7 +109,7 @@ var Adt = function() {
 
   }
 
-  this.forEach = function(iterator, callback) {
+  this.eachRecord = function(iterator, callback) {
     var _this = this;
 
     fs.open(this.path, 'r', function(err, fd) {
