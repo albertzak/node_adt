@@ -13,7 +13,7 @@ describe('Adt', function() {
     it('should not throw exceptions', function(done) {
       assert.doesNotThrow(function() {
         adt.open(fixture, 'ISO-8859-1', function(err, obj) {
-          assert(err === null);
+          assert.equal(err, null);
           done();
           return;
         });
@@ -22,7 +22,7 @@ describe('Adt', function() {
 
     it('should check for file permissions', function(done) {
       adt.open('non-existant-path', 'ISO-8859-1', function(err, cb) {
-        assert(err.code === 'ENOENT');
+        assert.equal(err.code, 'ENOENT');
         done();
         return;
       });
@@ -66,7 +66,7 @@ describe('Adt', function() {
     beforeEach(function(done) {
       adt = new Adt();
       adt.open(fixture, 'ISO-8859-1', function(err, obj) {
-        assert(err === null);
+        assert.equal(err, null);
         header = obj.header;
         done();
       });
@@ -96,7 +96,7 @@ describe('Adt', function() {
     beforeEach(function(done) {
       adt = new Adt();
       adt.open(fixture, 'ISO-8859-1', function(err, obj) {
-        assert(err === null);
+        assert.equal(err, null);
         columns = obj.columns;
         done();
       });
@@ -163,12 +163,48 @@ describe('Adt', function() {
     });
   });
 
+  describe('#findRecord', function() {
+    table = null;
+
+    before(function(done) {
+      new Adt().open(fixture, 'ISO-8859-1', function(err, adt) {
+        assert.equal(err, null);
+        table = adt;
+        done();
+      })
+    });
+
+    it('should retrieve the first record', function(done) {
+      table.findRecord(0, function(err, record) {
+        assert.equal(err, null)
+        assert.equal(record.Such, 'WGK');
+        done();
+      })
+    });
+
+    it('should retrieve the last record', function(done) {
+      table.findRecord(8, function(err, record) {
+        assert.equal(err, null)
+        assert.equal(record.Such, 'PRVL');
+        done();
+      })
+    });
+
+    it('should return error if requested record index is greater than the record count', function(done) {
+      table.findRecord(999, function(err, record) {
+        assert(err.indexOf('is greater than the record count') != -1);
+        done();
+      })
+    });
+
+  });
+
   describe('#eachRecord', function() {
     records = [];
 
     before(function(done) {
       new Adt().open(fixture, 'ISO-8859-1', function(err, adt) {
-        assert(err === null);
+        assert.equal(err, null);
         adt.eachRecord(function(err, record) {
           records.push(record);
         }, function() {

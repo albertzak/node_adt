@@ -143,6 +143,40 @@ var Adt = function() {
     });
   }
 
+  this.findRecord = function(recordNumber, callback) {
+    var _this = this;
+
+    if (recordNumber > _this.header.recordCount)
+      return callback('record number is greater than the record count (' + _this.header.recordCount + ')', _this);
+
+    fs.open(this.path, 'r', function(err, fd) {
+      if (err) return callback(err, null);
+
+      var start  = _this.header.dataOffset + _this.header.recordLength * recordNumber;
+      var end    = start + _this.header.recordLength;
+      var length = end - start;
+      var tempBuffer = new Buffer(length);
+
+      fs.read(fd, tempBuffer, 0, length, start, function(err, bytes, buffer) {
+        if (err) return callback(err, null);
+
+        var record = null;
+
+        try {
+          record = _this.parseRecord(buffer, _this.encoding);
+        } catch(e) {
+          return callback(e, record);
+        }
+
+        callback(null, record);
+      });
+
+    });
+
+    return _this;
+
+  }
+
   this.parseRecord = function(buffer, encoding) {
     var _this = this;
     // skip the first 5 bytes, don't know what they are for and they don't contain the data.
