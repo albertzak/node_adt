@@ -32,13 +32,18 @@ var Adt = function() {
     fsAccess(path, function(err) {
       if (err) return callback(err, _this);
 
-      _this.parseHeader(function(err, _this) {
-        if (err) return callback(err, _this);
+      fs.open(_this.path, 'r', function(err, fd) {
+        _this.fd = fd;
 
-        _this.parseColumns(function(err, _this) {
+        _this.parseHeader(function(err, _this) {
           if (err) return callback(err, _this);
-          callback(null, _this);
+
+          _this.parseColumns(function(err, _this) {
+            if (err) return callback(err, _this);
+            callback(null, _this);
+          });
         });
+
       });
     });
   }
@@ -47,26 +52,22 @@ var Adt = function() {
   this.parseHeader = function(callback) {
     var _this = this;
 
-    fs.open(_this.path, 'r', function(err, fd) {
-      if (err) return callback(err, _this);
+    fs.read(_this.fd, new Buffer(_this.HEADER_LENGTH), 0, _this.HEADER_LENGTH, 0, function(err, bytes, buffer) {
+      if (err) return callback(err);
 
-      fs.read(fd, new Buffer(_this.HEADER_LENGTH), 0, _this.HEADER_LENGTH, 0, function(err, bytes, buffer) {
-        if (err) return callback(err);
+      var header = {};
 
-        var header = {};
+      try {
+        header.recordCount  = buffer.readUInt32LE(24, 4);
+        header.dataOffset   = buffer.readUInt32LE(32, 4);
+        header.recordLength = buffer.readUInt32LE(36, 4);
+        header.columnCount  = (header.dataOffset-400)/200;
+        _this.header = header;
+      } catch(e) {
+        return callback(e, _this);
+      }
 
-        try {
-          header.recordCount  = buffer.readUInt32LE(24, 4);
-          header.dataOffset   = buffer.readUInt32LE(32, 4);
-          header.recordLength = buffer.readUInt32LE(36, 4);
-          header.columnCount  = (header.dataOffset-400)/200;
-          _this.header = header;
-        } catch(e) {
-          return callback(e, _this);
-        }
-
-        callback(err, _this);
-      });
+      callback(err, _this);
     });
   }
 
@@ -74,37 +75,33 @@ var Adt = function() {
   this.parseColumns = function(callback) {
     var _this = this;
 
-    fs.open(_this.path, 'r', function(err, fd) {
+    // column information is located after the header
+    // 200 bytes of information for each column
+    var columnsLength = _this.COLUMN_LENGTH * _this.header.columnCount;
+    var tempBuffer = new Buffer(_this.HEADER_LENGTH + columnsLength);
+    fs.read(_this.fd, tempBuffer, 0, columnsLength, _this.HEADER_LENGTH, function(err, bytes, buffer) {
       if (err) return callback(err, _this);
 
-      // column information is located after the header
-      // 200 bytes of information for each column
-      var columnsLength = _this.COLUMN_LENGTH * _this.header.columnCount;
-      var tempBuffer = new Buffer(_this.HEADER_LENGTH + columnsLength);
-      fs.read(fd, tempBuffer, 0, columnsLength, _this.HEADER_LENGTH, function(err, bytes, buffer) {
-        if (err) return callback(err, _this);
+      _this.columns = [];
 
-        _this.columns = [];
+      for (var i=0; i < _this.header.columnCount; i++) {
+        try {
+          var column = buffer.slice(_this.COLUMN_LENGTH * i);
 
-        for (var i=0; i < _this.header.columnCount; i++) {
-          try {
-            var column = buffer.slice(_this.COLUMN_LENGTH * i);
+          // column names are the first 128 bytes and column info takes up the last 72 bytes.
+          // byte 130 contains a 16-bit column type
+          // byte 136 contains a 16-bit length field
+          var name = iconv.decode(column.slice(0, 128), _this.encoding).replace(/\0/g, '').trim();
+          var type = column.readUInt16LE(129);
+          var length = column.readUInt16LE(135);
 
-            // column names are the first 128 bytes and column info takes up the last 72 bytes.
-            // byte 130 contains a 16-bit column type
-            // byte 136 contains a 16-bit length field
-            var name = iconv.decode(column.slice(0, 128), _this.encoding).replace(/\0/g, '').trim();
-            var type = column.readUInt16LE(129);
-            var length = column.readUInt16LE(135);
-
-            _this.columns.push({name: name, type: type, length: length});
-          } catch(e) {
-            return callback(e, _this);
-          }
+          _this.columns.push({name: name, type: type, length: length});
+        } catch(e) {
+          return callback(e, _this);
         }
+      }
 
-        callback(err, _this);
-      });
+      callback(err, _this);
     });
 
   }
@@ -112,35 +109,31 @@ var Adt = function() {
   this.eachRecord = function(iterator, callback) {
     var _this = this;
 
-    fs.open(this.path, 'r', function(err, fd) {
-      if (err) return callback(err, _this);
+    var iteratedCount = 0;
 
-      var iteratedCount = 0;
+    for(var i=0; i < _this.header.recordCount; i++) {
+      var start  = _this.header.dataOffset + _this.header.recordLength * i;
+      var end    = start + _this.header.recordLength;
+      var length = end - start;
+      var tempBuffer = new Buffer(length);
 
-      for(var i=0; i < _this.header.recordCount; i++) {
-        var start  = _this.header.dataOffset + _this.header.recordLength * i;
-        var end    = start + _this.header.recordLength;
-        var length = end - start;
-        var tempBuffer = new Buffer(length);
+      fs.read(_this.fd, tempBuffer, 0, length, start, function(err, bytes, buffer) {
+        if (err) return callback(err, _this);
 
-        fs.read(fd, tempBuffer, 0, length, start, function(err, bytes, buffer) {
-          if (err) return callback(err, _this);
+        var record = null;
 
-          var record = null;
+        try {
+          record = _this.parseRecord(buffer, _this.encoding);
+        } catch(e) {
+          return iterator(e, record);
+        }
 
-          try {
-            record = _this.parseRecord(buffer, _this.encoding);
-          } catch(e) {
-            return iterator(e, record);
-          }
-
-          iterator(null, record);
-          iteratedCount++;
-          if ((iteratedCount === _this.header.recordCount - 1) && (typeof callback === 'function'))
-            callback(null, _this);
-        });
-      }
-    });
+        iterator(null, record);
+        iteratedCount++;
+        if ((iteratedCount === _this.header.recordCount - 1) && (typeof callback === 'function'))
+          callback(null, _this);
+      });
+    }
   }
 
   this.findRecord = function(recordNumber, callback) {
@@ -149,33 +142,34 @@ var Adt = function() {
     if (recordNumber > _this.header.recordCount)
       return callback('record number is greater than the record count (' + _this.header.recordCount + ')', _this);
 
-    fs.open(this.path, 'r', function(err, fd) {
+    var start  = _this.header.dataOffset + _this.header.recordLength * recordNumber;
+    var end    = start + _this.header.recordLength;
+    var length = end - start;
+    var tempBuffer = new Buffer(length);
+
+    fs.read(_this.fd, tempBuffer, 0, length, start, function(err, bytes, buffer) {
       if (err) return callback(err, null);
 
-      var start  = _this.header.dataOffset + _this.header.recordLength * recordNumber;
-      var end    = start + _this.header.recordLength;
-      var length = end - start;
-      var tempBuffer = new Buffer(length);
+      var record = null;
 
-      fs.read(fd, tempBuffer, 0, length, start, function(err, bytes, buffer) {
-        if (err) return callback(err, null);
+      try {
+        record = _this.parseRecord(buffer, _this.encoding);
+      } catch(e) {
+        return callback(e, record);
+      }
 
-        var record = null;
-
-        try {
-          record = _this.parseRecord(buffer, _this.encoding);
-        } catch(e) {
-          return callback(e, record);
-        }
-
-        callback(null, record);
-      });
-
+      callback(null, record);
     });
 
     return _this;
-
   }
+
+  this.close = function() {
+    if (this.fd) {
+      fs.close(this.fd);
+      this.fd = null;
+    }
+  };
 
   this.parseRecord = function(buffer, encoding) {
     var _this = this;

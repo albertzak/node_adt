@@ -29,6 +29,17 @@ describe('Adt', function() {
     });
   });
 
+  describe('.close', function() {
+    it('should close any open file descriptors', function(done) {
+      assert.doesNotThrow(function() {
+        new Adt().open(fixture, 'ISO-8859-1', function(err, table) {
+          table.close();
+          done();
+        });
+      });
+    })
+  });
+
   describe('define type constants', function() {
     it('for string fields', function() {
       assert.equal(new Adt().CHARACTER, 4);

@@ -25,6 +25,12 @@ Node ADT is a small fast library for reading Advantage Database Server database 
         console.log(record.Name);
         console.log(record.Email);
       });
+
+      table.findRecord(0, function(err, record) {
+        console.log(record.Name);
+      });
+
+      table.close(); // Optional
     });
 ```
 
