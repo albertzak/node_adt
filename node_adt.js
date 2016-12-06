@@ -130,7 +130,7 @@ var Adt = function() {
 
         iterator(null, record);
         iteratedCount++;
-        if ((iteratedCount === _this.header.recordCount - 1) && (typeof callback === 'function'))
+        if ((iteratedCount === _this.header.recordCount) && (typeof callback === 'function'))
           callback(null, _this);
       });
     }
