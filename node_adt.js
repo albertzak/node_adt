@@ -122,13 +122,18 @@ var Adt = function() {
 
         var record = null;
 
-        try {
-          record = _this.parseRecord(buffer, _this.encoding);
-        } catch(e) {
-          return iterator(e, record);
+        if (buffer.readInt8(0) === 5) {
+          // skip record if it is marked as deleted (first byte = 0x05)
+        }
+        else {
+          try {
+            record = _this.parseRecord(buffer, _this.encoding);
+            iterator(null, record);
+          } catch(e) {
+            return iterator(e, record);
+          }
         }
 
-        iterator(null, record);
         iteratedCount++;
         if ((iteratedCount === _this.header.recordCount) && (typeof callback === 'function'))
           callback(null, _this);
