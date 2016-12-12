@@ -4,6 +4,9 @@ var fs = require('fs');
 var fsAccess = require('fs-access');
 var iconv = require('iconv-lite');
 
+var MS_PER_DAY = 1000 * 60 * 60 * 24;
+var JULIAN_1970 = 2440588;
+
 var Adt = function() {
 
   this.HEADER_LENGTH  = 400;
@@ -12,6 +15,7 @@ var Adt = function() {
   this.LOGICAL        = 1;
   this.CHARACTER      = 4;
   this.CICHARACTER    = 20;
+  this.NCHAR          = 26;
   this.DOUBLE         = 10;
   this.INTEGER        = 11;
   this.AUTOINCREMENT  = 15;
@@ -206,6 +210,10 @@ var Adt = function() {
         value = iconv.decode(buffer, encoding).replace(/\0/g, '').trim();
         break;
 
+      case this.NCHAR:
+        value = buffer.toString('ucs2', 0, length).replace(/\0/g, '').trim();
+        break;
+
       case this.DOUBLE:
         value = buffer.readDoubleLE(0);
         break;
@@ -228,10 +236,19 @@ var Adt = function() {
         value = (b === 'T' || b === 't' || b === '1' || b === 'Y' || b === 'y' || b === ' ')
         break;
 
-      // not implemented
       case this.DATE:
-      case this.TIME:
+        var julian = buffer.readInt32LE(0);
+        value = julian === -1 ? null : new Date((julian - JULIAN_1970) * MS_PER_DAY);
+        break;
+
       case this.TIMESTAMP:
+        var julian = buffer.readInt32LE(0);
+        var ms = buffer.readInt32LE(4);
+        value = ms === -1 ? null : new Date((julian - JULIAN_1970) * MS_PER_DAY + ms);
+        break;
+
+      // not implemented
+      case this.TIME:
         value = buffer;
         break;
 
