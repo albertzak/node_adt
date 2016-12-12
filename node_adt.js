@@ -115,6 +115,15 @@ var Adt = function() {
 
     var iteratedCount = 0;
 
+    // Handle empty tables
+    if (_this.header.recordCount === 0) {
+      if (typeof callback === 'function') {
+        setTimeout(function () { callback(null, _this); }, 1);
+      }
+      return;
+    }
+
+    // Handle non-empty tables
     for(var i=0; i < _this.header.recordCount; i++) {
       var start  = _this.header.dataOffset + _this.header.recordLength * i;
       var end    = start + _this.header.recordLength;
@@ -238,13 +247,13 @@ var Adt = function() {
 
       case this.DATE:
         var julian = buffer.readInt32LE(0);
-        value = julian === -1 ? null : new Date((julian - JULIAN_1970) * MS_PER_DAY);
+        value = julian === 0 ? null : new Date((julian - JULIAN_1970) * MS_PER_DAY);
         break;
 
       case this.TIMESTAMP:
         var julian = buffer.readInt32LE(0);
         var ms = buffer.readInt32LE(4);
-        value = ms === -1 ? null : new Date((julian - JULIAN_1970) * MS_PER_DAY + ms);
+        value = julian === 0 && ms === -1 ? null : new Date((julian - JULIAN_1970) * MS_PER_DAY + ms);
         break;
 
       // not implemented
