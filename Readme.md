@@ -1,6 +1,6 @@
 # Node-ADT
 
-**New in v0.1.x: Read huge database files thanks to async callbacks.**
+**New in v1.1.4: Support for Date, DateTime and NChar field types**
 
 Node ADT is a small fast library for reading Advantage Database Server database files (.ADT). It is a quick node port from the awesome rubygem by Chase Gray.
 
@@ -45,7 +45,7 @@ ADT Field     | JavaScript
 `NChar`       | `String`
 `Logical`     | `Boolean`
 `Double`      | `Number`
-`Integer`     | `Number`
+ `Integer`    | `Number`
 `ShortInteger`| `Number`
 `Date`        | `Date`
 `Timestamp`   | `Date`
@@ -64,6 +64,7 @@ ADT Field     | JavaScript
 
 Thank you, Chase Gray, for all the hard work of figuring out how the ADT format works.
 
+Thank you, [@yortus](https://github.com/yortus) for contributing bug fixes and support for Date, Timestamp and NChar fields types. 🎉
 
 ## License
 
