@@ -4,6 +4,9 @@ var fs = require('fs');
 var fsAccess = require('fs-access');
 var iconv = require('iconv-lite');
 
+var MS_PER_DAY = 1000 * 60 * 60 * 24;
+var JULIAN_1970 = 2440588;
+
 var Adt = function() {
 
   this.HEADER_LENGTH  = 400;
@@ -12,6 +15,7 @@ var Adt = function() {
   this.LOGICAL        = 1;
   this.CHARACTER      = 4;
   this.CICHARACTER    = 20;
+  this.NCHAR          = 26;
   this.DOUBLE         = 10;
   this.INTEGER        = 11;
   this.AUTOINCREMENT  = 15;
@@ -111,6 +115,15 @@ var Adt = function() {
 
     var iteratedCount = 0;
 
+    // Handle empty tables
+    if (_this.header.recordCount === 0) {
+      if (typeof callback === 'function') {
+        setTimeout(function () { callback(null, _this); }, 1);
+      }
+      return;
+    }
+
+    // Handle non-empty tables
     for(var i=0; i < _this.header.recordCount; i++) {
       var start  = _this.header.dataOffset + _this.header.recordLength * i;
       var end    = start + _this.header.recordLength;
@@ -122,15 +135,20 @@ var Adt = function() {
 
         var record = null;
 
-        try {
-          record = _this.parseRecord(buffer, _this.encoding);
-        } catch(e) {
-          return iterator(e, record);
+        if (buffer.readInt8(0) === 5) {
+          // skip record if it is marked as deleted (first byte = 0x05)
+        }
+        else {
+          try {
+            record = _this.parseRecord(buffer, _this.encoding);
+            iterator(null, record);
+          } catch(e) {
+            return iterator(e, record);
+          }
         }
 
-        iterator(null, record);
         iteratedCount++;
-        if ((iteratedCount === _this.header.recordCount - 1) && (typeof callback === 'function'))
+        if ((iteratedCount === _this.header.recordCount) && (typeof callback === 'function'))
           callback(null, _this);
       });
     }
@@ -201,6 +219,10 @@ var Adt = function() {
         value = iconv.decode(buffer, encoding).replace(/\0/g, '').trim();
         break;
 
+      case this.NCHAR:
+        value = buffer.toString('ucs2', 0, length).replace(/\0/g, '').trim();
+        break;
+
       case this.DOUBLE:
         value = buffer.readDoubleLE(0);
         break;
@@ -223,10 +245,19 @@ var Adt = function() {
         value = (b === 'T' || b === 't' || b === '1' || b === 'Y' || b === 'y' || b === ' ')
         break;
 
-      // not implemented
       case this.DATE:
-      case this.TIME:
+        var julian = buffer.readInt32LE(0);
+        value = julian === 0 ? null : new Date((julian - JULIAN_1970) * MS_PER_DAY);
+        break;
+
       case this.TIMESTAMP:
+        var julian = buffer.readInt32LE(0);
+        var ms = buffer.readInt32LE(4);
+        value = julian === 0 && ms === -1 ? null : new Date((julian - JULIAN_1970) * MS_PER_DAY + ms);
+        break;
+
+      // not implemented
+      case this.TIME:
         value = buffer;
         break;
 

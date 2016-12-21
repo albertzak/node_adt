@@ -42,14 +42,17 @@ ADT Field     | JavaScript
 ------------- | -----------
 `Character`   | `String`
 `CiCharater`  | `String`
+`NChar`       | `String`
 `Logical`     | `Boolean`
 `Double`      | `Number`
 `Integer`     | `Number`
 `ShortInteger`| `Number`
+`Date`        | `Date`
+`Timestamp`   | `Date`
 
 ### Not implemented
 
-`Date`, `Memo`, `Numeric`, `Image`, `Binary`, `Time`, `TimeStamp`, `Raw`, `Double`, `Money`, `ModTime`, `RowVersion`
+`Memo`, `Numeric`, `Image`, `Binary`, `Time`, `Raw`, `Money`, `ModTime`, `RowVersion`
 
 ## Limitations and known bugs
 
