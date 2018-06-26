@@ -192,7 +192,7 @@ var Adt = function() {
 
   this.close = function() {
     if (this.fd) {
-      fs.close(this.fd);
+      fs.close(this.fd, function () {/* no-op */});
       this.fd = null;
     }
   };
