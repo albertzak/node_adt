@@ -133,7 +133,15 @@ var Adt = function() {
       var tempBuffer = new Buffer(length);
 
       fs.read(_this.fd, tempBuffer, 0, length, start, function(err, bytes, buffer) {
-        if (err) return callback(err, _this);
+        if (err) {
+          if (typeof callback === 'function') {
+            return callback(err, _this);
+          }
+          else {
+            // An error occurred but no callback was given, so raise an 'uncaughtException' event
+            throw new Error(err);
+          }
+        }
 
         var record = null;
 

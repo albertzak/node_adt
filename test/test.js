@@ -218,8 +218,8 @@ describe('Adt', function() {
         assert.equal(err, null);
         adt.eachRecord(function(err, record) {
           records.push(record);
-        }, function() {
-          done();
+        }, function(err) {
+          done(err);
         });
       });
     });
