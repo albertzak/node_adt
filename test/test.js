@@ -224,6 +224,11 @@ describe('Adt', function() {
       });
     });
 
+    it('should enumerate records in the order they appear in the adt file', function () {
+      var ids = records.map(function (rec) { return rec.AbrGruId });
+      assert.deepStrictEqual(ids, [1, 2, 4, 5, 6, 8, 10, 37, 39]);
+    });
+
     it('should retrieve field values', function () {
       assert.equal(records[0].AbrGruId, 1);
       assert.equal(records[0].Such, 'WGK');

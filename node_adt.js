@@ -124,8 +124,10 @@ var Adt = function() {
     }
 
     // Handle non-empty tables
-    for(var i=0; i < _this.header.recordCount; i++) {
-      var start  = _this.header.dataOffset + _this.header.recordLength * i;
+    readNextRecord(); // start with the first record
+
+    function readNextRecord() {
+      var start  = _this.header.dataOffset + _this.header.recordLength * iteratedCount;
       var end    = start + _this.header.recordLength;
       var length = end - start;
       var tempBuffer = new Buffer(length);
@@ -148,10 +150,16 @@ var Adt = function() {
         }
 
         iteratedCount++;
-        if ((iteratedCount === _this.header.recordCount) && (typeof callback === 'function'))
-          callback(null, _this);
+        if (iteratedCount < _this.header.recordCount) {
+          readNextRecord();
+        }
+        else {
+          if (typeof callback === 'function') {
+            callback(null, _this);
+          }
+        }
       });
-    }
+    } // function readOneRecord
   }
 
   this.findRecord = function(recordNumber, callback) {
