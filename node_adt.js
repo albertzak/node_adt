@@ -110,13 +110,28 @@ var Adt = function() {
 
   }
 
-  this.eachRecord = function(iterator, callback) {
+  this.eachRecord = function(options, iterator, callback) {
     var _this = this;
+
+    // Shuffle arguments if no options object was given
+    if (typeof options === 'function') {
+      callback = iterator;
+      iterator = options;
+      options = {};
+    }
+
+    // Calculate iteration limits
+    var startingIndex = typeof options.offset === 'number' ? options.offset : 0;
+    if (startingIndex < 0) startingIndex = 0;
+    if (startingIndex > _this.header.recordCount) startingIndex = _this.header.recordCount;
+    var finishedIndex =  typeof options.limit === 'number' ? startingIndex + options.limit : _this.header.recordCount;
+    if (finishedIndex < startingIndex) finishedIndex = startingIndex;
+    if (finishedIndex > _this.header.recordCount) finishedIndex = _this.header.recordCount;
 
     var iteratedCount = 0;
 
     // Handle empty tables
-    if (_this.header.recordCount === 0) {
+    if (startingIndex === finishedIndex) {
       if (typeof callback === 'function') {
         setTimeout(function () { callback(null, _this); }, 1);
       }
@@ -127,7 +142,7 @@ var Adt = function() {
     readNextRecord(); // start with the first record
 
     function readNextRecord() {
-      var start  = _this.header.dataOffset + _this.header.recordLength * iteratedCount;
+      var start  = _this.header.dataOffset + _this.header.recordLength * (startingIndex + iteratedCount);
       var end    = start + _this.header.recordLength;
       var length = end - start;
       var tempBuffer = new Buffer(length);
@@ -158,7 +173,7 @@ var Adt = function() {
         }
 
         iteratedCount++;
-        if (iteratedCount < _this.header.recordCount) {
+        if (startingIndex + iteratedCount < finishedIndex) {
           readNextRecord();
         }
         else {
