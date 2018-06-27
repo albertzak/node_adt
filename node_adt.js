@@ -110,13 +110,28 @@ var Adt = function() {
 
   }
 
-  this.eachRecord = function(iterator, callback) {
+  this.eachRecord = function(options, iterator, callback) {
     var _this = this;
+
+    // Shuffle arguments if no options object was given
+    if (typeof options === 'function') {
+      callback = iterator;
+      iterator = options;
+      options = {};
+    }
+
+    // Calculate iteration limits
+    var startingIndex = typeof options.offset === 'number' ? options.offset : 0;
+    if (startingIndex < 0) startingIndex = 0;
+    if (startingIndex > _this.header.recordCount) startingIndex = _this.header.recordCount;
+    var finishedIndex =  typeof options.limit === 'number' ? startingIndex + options.limit : _this.header.recordCount;
+    if (finishedIndex < startingIndex) finishedIndex = startingIndex;
+    if (finishedIndex > _this.header.recordCount) finishedIndex = _this.header.recordCount;
 
     var iteratedCount = 0;
 
     // Handle empty tables
-    if (_this.header.recordCount === 0) {
+    if (startingIndex === finishedIndex) {
       if (typeof callback === 'function') {
         setTimeout(function () { callback(null, _this); }, 1);
       }
@@ -124,14 +139,24 @@ var Adt = function() {
     }
 
     // Handle non-empty tables
-    for(var i=0; i < _this.header.recordCount; i++) {
-      var start  = _this.header.dataOffset + _this.header.recordLength * i;
+    readNextRecord(); // start with the first record
+
+    function readNextRecord() {
+      var start  = _this.header.dataOffset + _this.header.recordLength * (startingIndex + iteratedCount);
       var end    = start + _this.header.recordLength;
       var length = end - start;
       var tempBuffer = new Buffer(length);
 
       fs.read(_this.fd, tempBuffer, 0, length, start, function(err, bytes, buffer) {
-        if (err) return callback(err, _this);
+        if (err) {
+          if (typeof callback === 'function') {
+            return callback(err, _this);
+          }
+          else {
+            // An error occurred but no callback was given, so raise an 'uncaughtException' event
+            throw new Error(err);
+          }
+        }
 
         var record = null;
 
@@ -148,10 +173,16 @@ var Adt = function() {
         }
 
         iteratedCount++;
-        if ((iteratedCount === _this.header.recordCount) && (typeof callback === 'function'))
-          callback(null, _this);
+        if (startingIndex + iteratedCount < finishedIndex) {
+          readNextRecord();
+        }
+        else {
+          if (typeof callback === 'function') {
+            callback(null, _this);
+          }
+        }
       });
-    }
+    } // function readOneRecord
   }
 
   this.findRecord = function(recordNumber, callback) {
@@ -184,7 +215,7 @@ var Adt = function() {
 
   this.close = function() {
     if (this.fd) {
-      fs.close(this.fd);
+      fs.close(this.fd, function () {/* no-op */});
       this.fd = null;
     }
   };

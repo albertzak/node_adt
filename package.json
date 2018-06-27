@@ -19,7 +19,7 @@
     "type": "git",
     "url": "git://github.com/albertzak/node_adt.git"
   },
-  "version": "1.1.4",
+  "version": "1.1.5",
   "main": "node_adt.js",
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha test/test.js"
@@ -29,6 +29,6 @@
     "iconv-lite": "^0.4.11"
   },
   "devDependencies": {
-    "mocha": "^2.3.2"
+    "mocha": "^5.2.0"
   }
 }

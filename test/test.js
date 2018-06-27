@@ -207,7 +207,6 @@ describe('Adt', function() {
         done();
       })
     });
-
   });
 
   describe('#eachRecord', function() {
@@ -218,10 +217,15 @@ describe('Adt', function() {
         assert.equal(err, null);
         adt.eachRecord(function(err, record) {
           records.push(record);
-        }, function() {
-          done();
+        }, function(err) {
+          done(err);
         });
       });
+    });
+
+    it('should enumerate records in the order they appear in the adt file', function () {
+      var ids = records.map(function (rec) { return rec.AbrGruId });
+      assert.deepStrictEqual(ids, [1, 2, 4, 5, 6, 8, 10, 37, 39]);
     });
 
     it('should retrieve field values', function () {
@@ -265,7 +269,96 @@ describe('Adt', function() {
       assert.equal(records[7].MwstGrup, null);
       assert.equal(records[8].MwstGrup, 0);
     });
-
   });
 
+  describe('#eachRecord with options', function() {
+
+    function fetch(options, cb) {
+      var records = [];
+      new Adt().open(fixture, 'ISO-8859-1', function(err, adt) {
+        assert.equal(err, null);
+        adt.eachRecord(options, function(err, record) {
+          records.push(record);
+        }, function(err) {
+          cb(err, records);
+        });
+      });
+    }
+
+    it('should apply limit option', function(done) {
+      fetch({limit: 5}, function (err, records) {
+        if (err) return done(err);
+        assert.equal(err, null);
+        assert.equal(records.length, 5);
+        assert.equal(records[0].AbrGruId, 1);
+        assert.equal(records[0].Such, 'WGK');
+        done();
+      });
+    });
+
+    it('should apply offset option', function(done) {
+      fetch({offset: 3}, function (err, records) {
+        if (err) return done(err);
+        assert.equal(err, null);
+        assert.equal(records.length, 6);
+        assert.equal(records[0].AbrGruId, 5);
+        assert.equal(records[0].Such, 'KFA');
+        done();
+      });
+    });
+
+    it('should apply limit and offset option', function(done) {
+      fetch({offset: 8, limit: 1}, function (err, records) {
+        if (err) return done(err);
+        assert.equal(err, null);
+        assert.equal(records.length, 1);
+        assert.equal(records[0].AbrGruId, 39);
+        assert.equal(records[0].Such, 'PRVL');
+        done();
+      });
+    });
+
+    it('should handle limit option underflow', function(done) {
+      fetch({limit: -1}, function (err, records) {
+        if (err) return done(err);
+        assert.equal(err, null);
+        assert.equal(records.length, 0);
+        done();
+      });
+    });
+
+    it('should handle limit option overflow', function(done) {
+      fetch({limit: 1000}, function (err, records) {
+        if (err) return done(err);
+        assert.equal(err, null);
+        assert.equal(records.length, 9);
+        assert.equal(records[0].AbrGruId, 1);
+        assert.equal(records[0].Such, 'WGK');
+        assert.equal(records[8].AbrGruId, 39);
+        assert.equal(records[8].Such, 'PRVL');
+        done();
+      });
+    });
+
+    it('should handle offset option underflow', function(done) {
+      fetch({offset: -1}, function (err, records) {
+        if (err) return done(err);
+        assert.equal(err, null);
+        assert.equal(records.length, 9);
+        assert.equal(records[0].AbrGruId, 1);
+        assert.equal(records[0].Such, 'WGK');
+        done();
+      });
+    });
+
+    it('should handle offset option overflow', function(done) {
+      fetch({offset: 1000}, function (err, records) {
+        if (err) return done(err);
+        assert.equal(err, null);
+        assert.equal(records.length, 0);
+        done();
+      });
+    });
+
+  });
 });
